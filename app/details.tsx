@@ -1,6 +1,18 @@
 // app/details.tsx
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Button } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  Button,
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from 'react-native';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useVideoDiaryStore } from '../store/store';
 import { ResizeMode, Video } from 'expo-av';
@@ -70,67 +82,97 @@ const DetailsPage = () => {
   };
 
   return (
-    <View style={styles.container}>
-      {video ? (
-        <>
-          <Video
-            source={{ uri: video.videoUri }}
-            style={styles.video}
-            useNativeControls
-            resizeMode={ResizeMode.CONTAIN}
-            isLooping
-          />
-          <Text style={styles.label}>Name:</Text>
-          <TextInput style={styles.input} value={name} onChangeText={setName} />
-          <Text style={styles.label}>Description:</Text>
-          <TextInput
-            style={styles.input}
-            value={description}
-            onChangeText={setDescription}
-            multiline
-          />
-          <Button title="Save" onPress={handleSave} />
-        </>
-      ) : (
-        <>
-          {selectedVideo && (
-            <Video
-              source={{ uri: selectedVideo }}
-              style={styles.video}
-              useNativeControls
-              resizeMode={ResizeMode.CONTAIN}
-              isLooping
-            />
-          )}
-          <Button title="Select Video" onPress={pickVideo} />
-          <Text style={styles.label}>Name:</Text>
-          <TextInput style={styles.input} value={name} onChangeText={setName} />
-          <Text style={styles.label}>Description:</Text>
-          <TextInput
-            style={styles.input}
-            value={description}
-            onChangeText={setDescription}
-            multiline
-          />
-          <Button title="Open Cropper" onPress={handleOpenCropModal} />
-          <Button title="Save" onPress={handleSave} disabled={!selectedVideo} />
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidView}
+      >
+        <ScrollView>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.innerContainer}>
+              {video ? (
+                <>
+                  <Video
+                    source={{ uri: video.videoUri }}
+                    style={styles.video}
+                    useNativeControls
+                    resizeMode={ResizeMode.CONTAIN}
+                    isLooping
+                  />
+                  <Text style={styles.label}>Name:</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={name}
+                    onChangeText={setName}
+                    returnKeyType="next"
+                  />
+                  <Text style={styles.label}>Description:</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    value={description}
+                    onChangeText={setDescription}
+                    multiline
+                    numberOfLines={4}
+                    returnKeyType="done"
+                  />
+                  <Button title="Save" onPress={handleSave} />
+                </>
+              ) : (
+                <>
+                  {selectedVideo && (
+                    <Video
+                      source={{ uri: selectedVideo }}
+                      style={styles.video}
+                      useNativeControls
+                      resizeMode={ResizeMode.CONTAIN}
+                      isLooping
+                    />
+                  )}
+                  <Button title="Select Video" onPress={pickVideo} />
+                  <Text style={styles.label}>Name:</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={name}
+                    onChangeText={setName}
+                    returnKeyType="next"
+                  />
+                  <Text style={styles.label}>Description:</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    value={description}
+                    onChangeText={setDescription}
+                    multiline
+                    numberOfLines={4}
+                    returnKeyType="done"
+                  />
+                  <Button title="Open Cropper" onPress={handleOpenCropModal} />
+                  <Button title="Save" onPress={handleSave} disabled={!selectedVideo} />
 
-          <CropModal
-            isVisible={isCropModalVisible}
-            onClose={handleCloseCropModal}
-            onVideoCropped={handleVideoCropped}
-          />
-        </>
-      )}
-    </View>
+                  <CropModal
+                    isVisible={isCropModalVisible}
+                    onClose={handleCloseCropModal}
+                    onVideoCropped={handleVideoCropped}
+                  />
+                </>
+              )}
+            </View>
+          </TouchableWithoutFeedback>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: '#fff',
+  },
+  keyboardAvoidView: {
+    flex: 1,
+  },
+  innerContainer: {
+    padding: 20,
   },
   video: {
     width: '100%',
@@ -149,6 +191,10 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: 16,
     marginBottom: 20,
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
   },
 });
 

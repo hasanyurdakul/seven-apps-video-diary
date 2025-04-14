@@ -1,6 +1,18 @@
 // components/CropModal/index.tsx
 import React, { useState, useCallback, useRef } from 'react';
-import { View, Text, Button, StyleSheet, Modal, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  Button,
+  StyleSheet,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from 'react-native';
 import { ResizeMode, Video } from 'expo-av';
 import Slider from '@react-native-community/slider';
 import * as DocumentPicker from 'expo-document-picker';
@@ -111,61 +123,84 @@ const CropModal: React.FC<CropModalProps> = ({ isVisible, onClose, onVideoCroppe
 
   return (
     <Modal visible={isVisible} animationType="slide" transparent={true} onRequestClose={onClose}>
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <Text style={styles.title}>Crop Video</Text>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.modalContainer}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.keyboardAvoidView}
+          >
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+              <View style={styles.modalContent}>
+                <Text style={styles.title}>Crop Video</Text>
 
-          {selectedVideo && (
-            <Video
-              ref={videoRef}
-              source={{ uri: selectedVideo }}
-              style={styles.video}
-              useNativeControls
-              resizeMode={ResizeMode.CONTAIN}
-              isLooping={false}
-              onLoad={handleVideoLoaded}
-            />
-          )}
+                {selectedVideo && (
+                  <Video
+                    ref={videoRef}
+                    source={{ uri: selectedVideo }}
+                    style={styles.video}
+                    useNativeControls
+                    resizeMode={ResizeMode.CONTAIN}
+                    isLooping={false}
+                    onLoad={handleVideoLoaded}
+                  />
+                )}
 
-          <Button title="Select Video" onPress={pickVideo} />
+                <Button title="Select Video" onPress={pickVideo} />
 
-          {selectedVideo && (
-            <View>
-              <Text>
-                Start Time: {startTime.toFixed(2)}s, End Time: {endTime.toFixed(2)}s
-              </Text>
-              <Slider
-                style={{ width: 200, height: 40 }}
-                minimumValue={0}
-                maximumValue={Math.max(0, videoDuration - 5)}
-                step={0.1}
-                value={startTime}
-                onValueChange={handleSliderChange}
-              />
-            </View>
-          )}
+                {selectedVideo && (
+                  <View>
+                    <Text>
+                      Start Time: {startTime.toFixed(2)}s, End Time: {endTime.toFixed(2)}s
+                    </Text>
+                    <Slider
+                      style={{ width: '100%', height: 40 }}
+                      minimumValue={0}
+                      maximumValue={Math.max(0, videoDuration - 5)}
+                      step={0.1}
+                      value={startTime}
+                      onValueChange={handleSliderChange}
+                    />
+                  </View>
+                )}
 
-          <Text style={styles.label}>Name:</Text>
-          <TextInput style={styles.input} value={name} onChangeText={setName} />
+                <Text style={styles.label}>Name:</Text>
+                <TextInput
+                  style={styles.input}
+                  value={name}
+                  onChangeText={setName}
+                  returnKeyType="next"
+                  placeholder="Enter video name"
+                />
 
-          <Text style={styles.label}>Description:</Text>
-          <TextInput
-            style={styles.input}
-            value={description}
-            onChangeText={setDescription}
-            multiline
-          />
+                <Text style={styles.label}>Description:</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={description}
+                  onChangeText={setDescription}
+                  multiline
+                  numberOfLines={4}
+                  placeholder="Enter video description"
+                  textAlignVertical="top"
+                  returnKeyType="done"
+                  blurOnSubmit={true}
+                />
 
-          <Button
-            title={isLoading ? 'Cropping...' : 'Crop and Save'}
-            onPress={handleCrop}
-            disabled={isLoading}
-          />
-          {isError && <Text style={styles.error}>Error: {error?.message || 'Unknown error'}</Text>}
-
-          <Button title="Cancel" onPress={onClose} />
+                <View style={styles.buttonContainer}>
+                  <Button
+                    title={isLoading ? 'Cropping...' : 'Crop and Save'}
+                    onPress={handleCrop}
+                    disabled={isLoading}
+                  />
+                  {isError && (
+                    <Text style={styles.error}>Error: {error?.message || 'Unknown error'}</Text>
+                  )}
+                  <Button title="Cancel" onPress={onClose} />
+                </View>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
@@ -177,36 +212,62 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
+  keyboardAvoidView: {
+    flex: 1,
+    width: '100%',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
   modalContent: {
     backgroundColor: 'white',
     padding: 20,
     borderRadius: 10,
-    width: '80%',
+    width: '90%',
+    maxWidth: 500,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 15,
+    textAlign: 'center',
   },
   video: {
     width: '100%',
     height: 200,
-    marginBottom: 10,
+    marginBottom: 15,
   },
   label: {
     fontSize: 16,
+    fontWeight: '600',
     marginTop: 10,
+    marginBottom: 5,
   },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 8,
-    marginBottom: 10,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 15,
+    width: '100%',
+    backgroundColor: '#f8f8f8',
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
   },
   error: {
     color: 'red',
     marginTop: 10,
+    textAlign: 'center',
+  },
+  buttonContainer: {
+    marginTop: 15,
+    gap: 10,
   },
 });
 
