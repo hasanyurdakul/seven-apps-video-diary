@@ -1,31 +1,27 @@
-import { Link, Tabs } from 'expo-router';
-
-import { HeaderButton } from '../../components/HeaderButton';
-import { TabBarIcon } from '../../components/TabBarIcon';
+import { MaterialIcons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
 
 export default function TabLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: 'black',
-      }}>
+    <Tabs screenOptions={{ headerShown: false }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <HeaderButton />
-            </Link>
+          title: 'Home',
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="home" color={color} size={size} />
           ),
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="settings"
         options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: 'Settings',
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="settings" color={color} size={size} />
+          ),
         }}
       />
     </Tabs>
