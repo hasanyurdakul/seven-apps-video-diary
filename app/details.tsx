@@ -15,10 +15,12 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useVideoDiaryStore } from '../store/store';
-import { ResizeMode, Video } from 'expo-av';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { ResizeMode } from 'expo-av';
 import CropModal from '../components/CropModal';
 import * as DocumentPicker from 'expo-document-picker';
 import { generateId } from '../utils/idGenerator';
+import { useEvent } from 'expo';
 
 const DetailsPage = () => {
   const { id } = useLocalSearchParams();
@@ -30,6 +32,23 @@ const DetailsPage = () => {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [isCropModalVisible, setCropModalVisible] = useState(false);
   const navigation = useNavigation();
+
+  const videoPlayer = useVideoPlayer(video?.videoUri || null, player => {
+    player.loop = true;
+    player.staysActiveInBackground = true;
+  });
+
+  const selectedVideoPlayer = useVideoPlayer(selectedVideo || null, player => {
+    player.loop = true;
+    player.staysActiveInBackground = true;
+  });
+
+  const { isPlaying: isVideoPlaying } = useEvent(videoPlayer, 'playingChange', {
+    isPlaying: videoPlayer.playing,
+  });
+  const { isPlaying: isSelectedPlaying } = useEvent(selectedVideoPlayer, 'playingChange', {
+    isPlaying: selectedVideoPlayer.playing,
+  });
 
   const handleSave = () => {
     if (video) {
@@ -92,12 +111,23 @@ const DetailsPage = () => {
             <View style={styles.innerContainer}>
               {video ? (
                 <>
-                  <Video
-                    source={{ uri: video.videoUri }}
+                  <VideoView
+                    player={videoPlayer}
                     style={styles.video}
-                    useNativeControls
-                    resizeMode={ResizeMode.CONTAIN}
-                    isLooping
+                    nativeControls
+                    contentFit="contain"
+                    allowsFullscreen
+                    allowsPictureInPicture
+                  />
+                  <Button
+                    title={isVideoPlaying ? 'Pause' : 'Play'}
+                    onPress={() => {
+                      if (isVideoPlaying) {
+                        videoPlayer.pause();
+                      } else {
+                        videoPlayer.play();
+                      }
+                    }}
                   />
                   <Text style={styles.label}>Name:</Text>
                   <TextInput
@@ -120,13 +150,26 @@ const DetailsPage = () => {
               ) : (
                 <>
                   {selectedVideo && (
-                    <Video
-                      source={{ uri: selectedVideo }}
-                      style={styles.video}
-                      useNativeControls
-                      resizeMode={ResizeMode.CONTAIN}
-                      isLooping
-                    />
+                    <>
+                      <VideoView
+                        player={selectedVideoPlayer}
+                        style={styles.video}
+                        nativeControls
+                        contentFit="contain"
+                        allowsFullscreen
+                        allowsPictureInPicture
+                      />
+                      <Button
+                        title={isSelectedPlaying ? 'Pause' : 'Play'}
+                        onPress={() => {
+                          if (isSelectedPlaying) {
+                            selectedVideoPlayer.pause();
+                          } else {
+                            selectedVideoPlayer.play();
+                          }
+                        }}
+                      />
+                    </>
                   )}
                   <Button title="Select Video" onPress={pickVideo} />
                   <Text style={styles.label}>Name:</Text>

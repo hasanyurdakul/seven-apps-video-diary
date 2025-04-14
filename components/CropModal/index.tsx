@@ -20,6 +20,8 @@ import { generateId } from '../../utils/idGenerator';
 import useVideoCropping from '../../hooks/useVideoCropping';
 import { useVideoDiaryStore } from '../../store/store';
 import * as FileSystem from 'expo-file-system';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { useEvent } from 'expo';
 
 interface CropModalProps {
   isVisible: boolean;
@@ -39,9 +41,28 @@ const CropModal: React.FC<CropModalProps> = ({ isVisible, onClose, onVideoCroppe
   const { mutate, isLoading, isError, data, error } = useVideoCropping();
   const addVideo = useVideoDiaryStore(state => state.addVideo);
 
-  const handleVideoLoaded = (playbackStatus: any) => {
-    setVideoDuration(playbackStatus.durationMillis / 1000);
-  };
+  const player = useVideoPlayer(selectedVideo || null, player => {
+    if (selectedVideo) {
+      player.timeUpdateEventInterval = 0.1; // More frequent updates for smoother UI
+    }
+  });
+
+  const { currentTime } = useEvent(player, 'timeUpdate', {
+    currentTime: player.currentTime || 0,
+    currentLiveTimestamp: null,
+    currentOffsetFromLive: null,
+    bufferedPosition: 0,
+  });
+
+  const { status } = useEvent(player, 'statusChange', { status: player.status });
+  React.useEffect(() => {
+    if (status === 'readyToPlay') {
+      setVideoDuration(player.duration);
+      setEndTime(Math.min(5, player.duration));
+    }
+  }, [status, player]);
+
+  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
 
   const handleCrop = async () => {
     if (!selectedVideo) {
@@ -117,9 +138,18 @@ const CropModal: React.FC<CropModalProps> = ({ isVisible, onClose, onVideoCroppe
     (value: number) => {
       setStartTime(value);
       setEndTime(Math.min(value + 5, videoDuration));
+      player.currentTime = value;
     },
-    [videoDuration]
+    [videoDuration, player]
   );
+
+  const togglePlayPause = useCallback(() => {
+    if (isPlaying) {
+      player.pause();
+    } else {
+      player.play();
+    }
+  }, [isPlaying, player]);
 
   return (
     <Modal visible={isVisible} animationType="slide" transparent={true} onRequestClose={onClose}>
@@ -133,68 +163,68 @@ const CropModal: React.FC<CropModalProps> = ({ isVisible, onClose, onVideoCroppe
               <View style={styles.modalContent}>
                 <Text style={styles.title}>Crop Video</Text>
 
-                {selectedVideo && (
-                  <Video
-                    ref={videoRef}
-                    source={{ uri: selectedVideo }}
-                    style={styles.video}
-                    useNativeControls
-                    resizeMode={ResizeMode.CONTAIN}
-                    isLooping={false}
-                    onLoad={handleVideoLoaded}
-                  />
-                )}
-
-                <Button title="Select Video" onPress={pickVideo} />
-
-                {selectedVideo && (
-                  <View>
-                    <Text>
-                      Start Time: {startTime.toFixed(2)}s, End Time: {endTime.toFixed(2)}s
-                    </Text>
-                    <Slider
-                      style={{ width: '100%', height: 40 }}
-                      minimumValue={0}
-                      maximumValue={Math.max(0, videoDuration - 5)}
-                      step={0.1}
-                      value={startTime}
-                      onValueChange={handleSliderChange}
+                {selectedVideo ? (
+                  <View style={styles.videoContainer}>
+                    <VideoView
+                      player={player}
+                      style={styles.video}
+                      contentFit="contain"
+                      allowsFullscreen
                     />
+                    <View style={styles.videoControls}>
+                      <Button title={isPlaying ? 'Pause' : 'Play'} onPress={togglePlayPause} />
+                      <Text style={styles.timeText}>
+                        Current: {currentTime.toFixed(1)}s / {videoDuration.toFixed(1)}s
+                      </Text>
+                    </View>
+                    <View style={styles.cropControls}>
+                      <Text style={styles.cropText}>
+                        Crop Range: {startTime.toFixed(1)}s - {endTime.toFixed(1)}s{'\n'}Duration:{' '}
+                        {(endTime - startTime).toFixed(1)}s
+                      </Text>
+                      <Slider
+                        style={styles.slider}
+                        minimumValue={0}
+                        maximumValue={Math.max(0, videoDuration - 5)}
+                        step={0.1}
+                        value={startTime}
+                        onValueChange={handleSliderChange}
+                      />
+                    </View>
                   </View>
+                ) : (
+                  <Button title="Select Video" onPress={pickVideo} />
                 )}
 
-                <Text style={styles.label}>Name:</Text>
-                <TextInput
-                  style={styles.input}
-                  value={name}
-                  onChangeText={setName}
-                  returnKeyType="next"
-                  placeholder="Enter video name"
-                />
-
-                <Text style={styles.label}>Description:</Text>
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  value={description}
-                  onChangeText={setDescription}
-                  multiline
-                  numberOfLines={4}
-                  placeholder="Enter video description"
-                  textAlignVertical="top"
-                  returnKeyType="done"
-                  blurOnSubmit={true}
-                />
-
-                <View style={styles.buttonContainer}>
-                  <Button
-                    title={isLoading ? 'Cropping...' : 'Crop and Save'}
-                    onPress={handleCrop}
-                    disabled={isLoading}
+                <View style={styles.formContainer}>
+                  <Text style={styles.label}>Name:</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={name}
+                    onChangeText={setName}
+                    placeholder="Enter video name"
+                    returnKeyType="next"
                   />
-                  {isError && (
-                    <Text style={styles.error}>Error: {error?.message || 'Unknown error'}</Text>
-                  )}
-                  <Button title="Cancel" onPress={onClose} />
+
+                  <Text style={styles.label}>Description:</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    value={description}
+                    onChangeText={setDescription}
+                    multiline
+                    numberOfLines={4}
+                    placeholder="Enter video description"
+                    textAlignVertical="top"
+                  />
+
+                  <View style={styles.buttonContainer}>
+                    <Button
+                      title={isLoading ? 'Cropping...' : 'Crop and Save'}
+                      onPress={handleCrop}
+                      disabled={isLoading || !selectedVideo}
+                    />
+                    <Button title="Cancel" onPress={onClose} />
+                  </View>
                 </View>
               </View>
             </ScrollView>
@@ -268,6 +298,36 @@ const styles = StyleSheet.create({
   buttonContainer: {
     marginTop: 15,
     gap: 10,
+  },
+  videoContainer: {
+    marginBottom: 15,
+  },
+  videoControls: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+    paddingHorizontal: 10,
+  },
+  timeText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  cropControls: {
+    marginTop: 15,
+    paddingHorizontal: 10,
+  },
+  cropText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  formContainer: {
+    marginTop: 15,
   },
 });
 

@@ -10,7 +10,9 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router","@config-plugins/ffmpeg-kit-react-native"
+      "expo-router",
+      "@config-plugins/ffmpeg-kit-react-native",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,
