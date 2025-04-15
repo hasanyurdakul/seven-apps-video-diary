@@ -1,5 +1,5 @@
 // app/index.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -17,12 +17,18 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { ResizeMode } from 'expo-av';
 import { useNavigation } from 'expo-router';
 import { useEvent } from 'expo';
+import { Ionicons } from '@expo/vector-icons';
+import CropModal from '../../components/CropModal';
 
-const MainScreen = () => {
-  const videos = useVideoDiaryStore(state => state.videos);
-  const navigation = useNavigation<any>();
-
-  const renderItem = ({ item }: { item: { id: string; name: string; videoUri: string } }) => {
+// VideoItem component
+const VideoItem = React.memo(
+  ({
+    item,
+    onPress,
+  }: {
+    item: { id: string; name: string; videoUri: string };
+    onPress: () => void;
+  }) => {
     const player = useVideoPlayer(item.videoUri, player => {
       player.loop = true;
       player.staysActiveInBackground = true;
@@ -40,10 +46,7 @@ const MainScreen = () => {
     const { status } = useEvent(player, 'statusChange', { status: player.status });
 
     return (
-      <TouchableOpacity
-        onPress={() => navigation.push('details', { id: item.id })}
-        style={styles.videoItem}
-      >
+      <TouchableOpacity onPress={onPress} style={styles.videoItem}>
         <View style={styles.videoContainer}>
           <VideoView
             player={player}
@@ -74,7 +77,37 @@ const MainScreen = () => {
         </View>
       </TouchableOpacity>
     );
+  }
+);
+
+const MainScreen = () => {
+  const videos = useVideoDiaryStore(state => state.videos);
+  const navigation = useNavigation<any>();
+  const [isCropModalVisible, setCropModalVisible] = useState(false);
+  const addVideo = useVideoDiaryStore(state => state.addVideo);
+
+  const handleOpenCropModal = () => {
+    setCropModalVisible(true);
   };
+
+  const handleCloseCropModal = () => {
+    setCropModalVisible(false);
+  };
+
+  const handleVideoCropped = (videoUri: string, name: string, description: string) => {
+    const newVideo = {
+      id: Date.now().toString(),
+      videoUri,
+      name,
+      description,
+    };
+    addVideo(newVideo);
+    handleCloseCropModal();
+  };
+
+  const renderItem = ({ item }: { item: { id: string; name: string; videoUri: string } }) => (
+    <VideoItem item={item} onPress={() => navigation.push('details', { id: item.id })} />
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -91,11 +124,15 @@ const MainScreen = () => {
             ListEmptyComponent={() => <Text style={styles.emptyText}>No videos yet. Add one!</Text>}
             contentContainerStyle={styles.list}
           />
-          <Link href="/details" asChild>
-            <TouchableOpacity style={styles.addButton}>
-              <Text style={styles.addButtonText}>Add New Video</Text>
-            </TouchableOpacity>
-          </Link>
+          <TouchableOpacity style={styles.fab} onPress={handleOpenCropModal}>
+            <Ionicons name="add" size={30} color="white" />
+          </TouchableOpacity>
+
+          <CropModal
+            isVisible={isCropModalVisible}
+            onClose={handleCloseCropModal}
+            onVideoCropped={handleVideoCropped}
+          />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -169,17 +206,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     padding: 16,
   },
-  addButton: {
+  fab: {
+    position: 'absolute',
+    bottom: 30,
+    right: 30,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: '#007AFF',
-    margin: 16,
-    padding: 16,
-    borderRadius: 12,
-  },
-  addButtonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '600',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 });
 
