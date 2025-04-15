@@ -1,5 +1,5 @@
 // app/index.tsx
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Platform,
   Button,
   StyleSheet,
+  Dimensions,
 } from 'react-native';
 import { Link } from 'expo-router';
 import { useVideoDiaryStore } from '../../store/store';
@@ -19,6 +20,11 @@ import { useNavigation } from 'expo-router';
 import { useEvent } from 'expo';
 import { Ionicons } from '@expo/vector-icons';
 import CropModal from '../../components/CropModal';
+
+const COLUMN_COUNT = 2;
+const SPACING = 8;
+const windowWidth = Dimensions.get('window').width;
+const itemWidth = (windowWidth - SPACING * (COLUMN_COUNT + 1)) / COLUMN_COUNT;
 
 // VideoItem component
 const VideoItem = React.memo(
@@ -32,11 +38,9 @@ const VideoItem = React.memo(
     const player = useVideoPlayer(item.videoUri, player => {
       player.loop = true;
       player.staysActiveInBackground = true;
-      player.volume = 0; // Mute by default in list view
-      // Generate thumbnail when video is ready
+      player.volume = 0;
       if (player.status === 'readyToPlay') {
         player.generateThumbnailsAsync([0]).then(thumbnails => {
-          // You can use thumbnails[0] with expo-image if needed
           console.log('Thumbnail generated:', thumbnails[0]);
         });
       }
@@ -72,8 +76,10 @@ const VideoItem = React.memo(
           </View>
         </View>
         <View style={styles.videoInfo}>
-          <Text style={styles.videoTitle}>{item.name}</Text>
-          <Text style={styles.videoStatus}>{status === 'loading' ? 'Loading...' : ''}</Text>
+          <Text style={styles.videoTitle} numberOfLines={1} ellipsizeMode="tail">
+            {item.name}
+          </Text>
+          {status === 'loading' && <Text style={styles.videoStatus}>Loading...</Text>}
         </View>
       </TouchableOpacity>
     );
@@ -85,6 +91,11 @@ const MainScreen = () => {
   const navigation = useNavigation<any>();
   const [isCropModalVisible, setCropModalVisible] = useState(false);
   const addVideo = useVideoDiaryStore(state => state.addVideo);
+
+  // Sort videos by most recent first (assuming id is timestamp-based)
+  const sortedVideos = useMemo(() => {
+    return [...videos].sort((a, b) => Number(b.id) - Number(a.id));
+  }, [videos]);
 
   const handleOpenCropModal = () => {
     setCropModalVisible(true);
@@ -118,9 +129,11 @@ const MainScreen = () => {
         <View style={styles.content}>
           <Text style={styles.title}>My Video Diary</Text>
           <FlatList
-            data={videos}
+            data={sortedVideos}
             renderItem={renderItem}
             keyExtractor={item => item.id}
+            numColumns={COLUMN_COUNT}
+            columnWrapperStyle={styles.row}
             ListEmptyComponent={() => <Text style={styles.emptyText}>No videos yet. Add one!</Text>}
             contentContainerStyle={styles.list}
           />
@@ -156,17 +169,22 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   list: {
-    padding: 16,
+    padding: SPACING,
+  },
+  row: {
+    justifyContent: 'flex-start',
+    gap: SPACING,
   },
   videoItem: {
-    marginBottom: 16,
-    borderRadius: 12,
+    width: itemWidth,
+    marginBottom: SPACING,
+    borderRadius: 8,
     backgroundColor: '#f5f5f5',
     overflow: 'hidden',
   },
   videoContainer: {
+    aspectRatio: 1,
     position: 'relative',
-    aspectRatio: 16 / 9,
   },
   video: {
     width: '100%',
@@ -176,29 +194,30 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.2)',
   },
   playButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   playButtonText: {
-    fontSize: 24,
+    fontSize: 20,
   },
   videoInfo: {
-    padding: 12,
+    padding: 8,
   },
   videoTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   videoStatus: {
     fontSize: 12,
     color: '#666',
-    marginTop: 4,
+    marginTop: 2,
   },
   emptyText: {
     textAlign: 'center',

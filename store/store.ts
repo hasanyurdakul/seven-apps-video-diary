@@ -14,6 +14,7 @@ interface VideoDiaryState {
   addVideo: (video: VideoEntry) => void;
   updateVideo: (id: string, updatedVideo: Partial<VideoEntry>) => void;
   deleteVideo: (id: string) => void;
+  clearVideos: () => void;
 }
 
 export const useVideoDiaryStore = create<VideoDiaryState>()(
@@ -26,6 +27,7 @@ export const useVideoDiaryStore = create<VideoDiaryState>()(
           videos: get().videos.map(v => (v.id === id ? { ...v, ...updatedVideo } : v)),
         }),
       deleteVideo: id => set({ videos: get().videos.filter(v => v.id !== id) }),
+      clearVideos: () => set({ videos: [] }),
     }),
     {
       name: 'video-diary-storage',
