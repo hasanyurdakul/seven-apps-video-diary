@@ -1,5 +1,5 @@
 // components/CropModal/index.tsx
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -76,6 +76,48 @@ const CropModal: React.FC<CropModalProps> = ({ isVisible, onClose, onVideoCroppe
     }
   }, [currentTime, endTime, startTime, player]);
 
+  const resetState = useCallback(() => {
+    setSelectedVideo(null);
+    setStartTime(0);
+    setEndTime(5);
+    setName('');
+    setDescription('');
+    setVideoDuration(0);
+    setCurrentStep(1);
+    setIsDragging(false);
+    try {
+      if (player && player.status !== 'error') {
+        player.pause();
+      }
+    } catch (error) {
+      console.warn('Error while pausing player:', error);
+    }
+  }, [player]);
+
+  // Reset state and cleanup when modal closes
+  useEffect(() => {
+    if (!isVisible) {
+      try {
+        if (player && player.status !== 'error') {
+          player.pause();
+        }
+      } catch (error) {
+        console.warn('Error while cleaning up player:', error);
+      }
+      resetState();
+    }
+    // Cleanup function when component unmounts or modal closes
+    return () => {
+      try {
+        if (player && player.status !== 'error') {
+          player.pause();
+        }
+      } catch (error) {
+        console.warn('Error while cleaning up player:', error);
+      }
+    };
+  }, [isVisible, resetState, player]);
+
   const handleCrop = async () => {
     if (!selectedVideo) {
       alert('Please select a video first.');
@@ -119,6 +161,7 @@ const CropModal: React.FC<CropModalProps> = ({ isVisible, onClose, onVideoCroppe
           onSuccess: croppedVideoUri => {
             console.log('Cropped video URI:', croppedVideoUri);
             onVideoCropped(croppedVideoUri, name, description);
+            resetState();
             onClose();
           },
           onError: (err: any) => {
