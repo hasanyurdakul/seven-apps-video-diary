@@ -43,12 +43,8 @@ const DetailsPage = () => {
     player.staysActiveInBackground = true;
   });
 
-  const { isPlaying: isVideoPlaying } = useEvent(videoPlayer, 'playingChange', {
-    isPlaying: videoPlayer.playing,
-  });
-  const { isPlaying: isSelectedPlaying } = useEvent(selectedVideoPlayer, 'playingChange', {
-    isPlaying: selectedVideoPlayer.playing,
-  });
+  const { isPlaying: isVideoPlaying } = useEvent(videoPlayer, 'playingChange', { isPlaying: videoPlayer.playing });
+  const { isPlaying: isSelectedPlaying } = useEvent(selectedVideoPlayer, 'playingChange', { isPlaying: selectedVideoPlayer.playing });
 
   const handleSave = () => {
     if (video) {
