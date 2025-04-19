@@ -6,6 +6,12 @@
 #### Steps
 1. First of all. Lets start building project. This will throw an error but don't worry. We'll fix it in next steps.
 ```bash
+npm install
+
+
+then
+
+
 npx expo run:ios
 ```
 2. Open up your ios directory
