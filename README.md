@@ -1,7 +1,7 @@
 
 ## Installing Directions
 
-- Since **ffmpeg-kit-react-native** binaries are **removed from npm**, we have to compile the library from source code.
+- Since **ffmpeg-kit-react-native** binaries are **removed from npm**, we have to compile the library from [source code](https://github.com/arthenica/ffmpeg-kit).
 - For easy demonstration, I've already included the source code itself in the project. 
 - But if you like to know how i did it in depth, please follow this [issue](https://github.com/arthenica/ffmpeg-kit/issues/1144) 
 - Also check out this [article](https://dev.to/utkarsh4517/using-ffmpegkit-locally-in-react-native-after-retirement-3a9p) 
