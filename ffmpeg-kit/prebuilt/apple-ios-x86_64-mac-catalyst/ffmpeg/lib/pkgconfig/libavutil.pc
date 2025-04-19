@@ -1,0 +1,14 @@
+prefix=/Users/hasanyurdakul/Documents/Development/ffmpeg-kit/prebuilt/apple-ios-x86_64-mac-catalyst/ffmpeg
+exec_prefix=${prefix}
+libdir=/Users/hasanyurdakul/Documents/Development/ffmpeg-kit/prebuilt/apple-ios-x86_64-mac-catalyst/ffmpeg/lib
+includedir=/Users/hasanyurdakul/Documents/Development/ffmpeg-kit/prebuilt/apple-ios-x86_64-mac-catalyst/ffmpeg/include
+
+Name: libavutil
+Description: FFmpeg utility library
+Version: 58.2.100
+Requires: 
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lavutil 
+Libs.private: -pthread -lm -framework CoreFoundation -framework CoreVideo -framework CoreMedia
+Cflags: -I${includedir}
